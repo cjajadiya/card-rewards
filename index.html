@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Card Rewards Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DESIGN TOKENS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root {
+  /* Backgrounds — layered depth */
+  --bg:          #090d16;
+  --bg-card:     #0d1422;
+  --bg-raised:   #111927;
+  --bg-input:    #0f1826;
+  --bg-input-focus: #131d2e;
+
+  /* Borders — gossamer thin */
+  --border:      rgba(148,163,184,0.08);
+  --border-mid:  rgba(148,163,184,0.12);
+  --border-strong: rgba(148,163,184,0.18);
+
+  /* Text */
+  --text:        #f1f5f9;
+  --text-2:      #94a3b8;
+  --text-3:      #475569;
+  --text-4:      #2d3f57;
+
+  /* Accent — ice blue */
+  --accent:      #38bdf8;
+  --accent-soft: rgba(56,189,248,0.10);
+  --accent-mid:  rgba(56,189,248,0.18);
+  --accent-glow: rgba(56,189,248,0.22);
+  --accent-on:   #082030;
+
+  /* Danger */
+  --danger:      #f87171;
+  --danger-soft: rgba(248,113,113,0.09);
+
+  /* Success */
+  --success:     #34d399;
+
+  /* Motion */
+  --spring:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:    cubic-bezier(0.0, 0.0, 0.2, 1);
+
+  /* Shape */
+  --r-xl:  20px;
+  --r-lg:  16px;
+  --r-md:  11px;
+  --r-sm:  8px;
+
+  /* Type */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RESET & BASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Ambient depth glow */
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% -5%, rgba(56,189,248,0.055) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 30% at 85% 110%, rgba(56,189,248,0.03) 0%, transparent 60%);
+}
+
+input, select, button, textarea {
+  font-family: var(--font);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SHELL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.shell {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 90px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HEADER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.header {
+  padding: 44px 24px 8px;
+}
+.header-title {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  line-height: 1.15;
+}
+.header-title span {
+  color: var(--accent);
+  font-weight: 500;
+}
+.header-sub {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TAB BAR — frosted glass dock
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.tab-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 200;
+  display: flex;
+  background: rgba(7, 11, 20, 0.78);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.tab {
+  flex: 1;
+  padding: 12px 0 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-4);
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: color 0.35s var(--spring);
+  position: relative;
+}
+.tab svg {
+  width: 22px; height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.35s var(--spring), transform 0.35s var(--spring);
+}
+.tab.active {
+  color: var(--accent);
+}
+.tab.active svg {
+  transform: translateY(-1px);
+}
+/* Active indicator pip */
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  opacity: 0.9;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PANES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.pane {
+  display: none;
+  padding: 20px 20px 12px;
+}
+.pane.active {
+  display: block;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SEARCH INPUT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.search-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 15px; top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  stroke: var(--text-3); fill: none; stroke-width: 2;
+  pointer-events: none;
+  transition: stroke 0.3s var(--spring);
+}
+.search-wrap input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 15px 15px 15px 44px;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.35s var(--spring), box-shadow 0.35s var(--spring), background 0.35s var(--spring);
+}
+.search-wrap input::placeholder {
+  color: var(--text-4);
+}
+.search-wrap input:focus {
+  background: var(--bg-input-focus);
+  border-color: rgba(56,189,248,0.35);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 1px 3px rgba(0,0,0,0.3);
+}
+.search-wrap:focus-within svg {
+  stroke: var(--accent);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CHANNEL TOGGLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.channel-toggle {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.ch-btn {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: color 0.35s var(--spring), background 0.35s var(--spring), box-shadow 0.35s var(--spring);
+}
+.ch-btn.active {
+  background: var(--accent);
+  color: var(--accent-on);
+  box-shadow: 0 0 20px var(--accent-glow);
+  font-weight: 600;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   EMPTY STATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-4);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.empty-state .icon {
+  font-size: 36px;
+  margin-bottom: 14px;
+  opacity: 0.2;
+  display: block;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RESULT CARDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.res-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.4s var(--spring), box-shadow 0.4s var(--spring);
+}
+
+/* Rank 0 — Best Pick: gradient glow border, no harsh line */
+.res-card.rank-0 {
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    linear-gradient(
+      140deg,
+      rgba(56,189,248,0.5) 0%,
+      rgba(56,189,248,0.15) 40%,
+      rgba(56,189,248,0.03) 70%,
+      transparent 100%
+    ) border-box;
+  border: 1px solid transparent;
+  box-shadow:
+    0 0 0 1px rgba(56,189,248,0.06) inset,
+    0 8px 32px rgba(0,0,0,0.5),
+    0 0 40px rgba(56,189,248,0.06);
+}
+
+/* Subtle inner shimmer for rank 0 */
+.res-card.rank-0::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(56,189,248,0.35) 40%, rgba(56,189,248,0.35) 60%, transparent 100%);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+
+.rank-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-4);
+  margin-bottom: 12px;
+}
+.rank-0 .rank-label {
+  color: var(--accent);
+  letter-spacing: 0.1em;
+}
+
+.res-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.res-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+.res-type {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 4px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.res-pct-wrap {
+  text-align: right;
+  flex-shrink: 0;
+}
+.res-pct {
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--accent);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.res-pct span {
+  font-size: 20px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+.res-pct-unit {
+  font-size: 10px;
+  color: var(--text-4);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 500;
+}
+.res-note {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.6;
+}
+.match-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  margin-left: 7px;
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(56,189,248,0.15);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION LABEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--text-4);
+  margin-bottom: 12px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CARD EDITOR ITEMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.card-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  margin-bottom: 10px;
+  transition: box-shadow 0.35s var(--spring);
+}
+.card-item:has(.card-body.open) {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  border-color: var(--border-mid);
+}
+
+.card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+.card-hdr-l {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.card-dot {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+.card-hdr-name {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.card-hdr-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.card-hdr-chevron {
+  color: var(--text-4);
+  font-size: 14px;
+  transition: transform 0.4s var(--spring), color 0.3s;
+  line-height: 1;
+}
+.card-hdr-chevron.open {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.card-body {
+  display: none;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(9,13,22,0.6);
+}
+.card-body.open {
+  display: block;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FORM FIELDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.field-group {
+  margin-bottom: 14px;
+}
+.field-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  margin-bottom: 7px;
+  display: block;
+}
+.field-input,
+.field-select {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 11px 13px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.35s var(--spring), box-shadow 0.35s var(--spring), background 0.35s var(--spring);
+  appearance: none;
+}
+.field-input:focus,
+.field-select:focus {
+  background: var(--bg-input-focus);
+  border-color: rgba(56,189,248,0.3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field-select {
+  cursor: pointer;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RULES TABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.rules-header {
+  display: grid;
+  grid-template-columns: 1fr 62px 72px 32px;
+  gap: 5px;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+.rules-header span {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rule-row {
+  display: grid;
+  grid-template-columns: 1fr 62px 72px 32px;
+  gap: 5px;
+  margin-bottom: 5px;
+  align-items: center;
+}
+.rule-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.35s var(--spring), box-shadow 0.35s var(--spring);
+}
+.rule-input:focus {
+  border-color: rgba(56,189,248,0.3);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.rule-input.pct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-weight: 500;
+}
+.rule-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 4px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-2);
+  outline: none;
+  width: 100%;
+  appearance: none;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.35s var(--spring);
+}
+.rule-select:focus {
+  border-color: rgba(56,189,248,0.3);
+}
+
+.btn-del {
+  width: 32px; height: 32px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: background 0.3s var(--spring), color 0.3s var(--spring), border-color 0.3s var(--spring);
+}
+.btn-del:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgba(248,113,113,0.25);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE RATE ROW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.base-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.base-row label {
+  font-size: 12px;
+  color: var(--text-2);
+  flex: 1;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.base-input {
+  width: 66px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-align: right;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.35s var(--spring), box-shadow 0.35s var(--spring);
+}
+.base-input:focus {
+  border-color: rgba(56,189,248,0.3);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.pct-suffix {
+  font-size: 13px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BUTTONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.btn-add-rule {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px dashed rgba(56,189,248,0.25);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: background 0.35s var(--spring), border-color 0.35s var(--spring);
+}
+.btn-add-rule:hover {
+  background: var(--accent-mid);
+  border-color: rgba(56,189,248,0.4);
+}
+
+.btn-del-card {
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font);
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.35s var(--spring);
+}
+.btn-del-card:hover {
+  background: rgba(248,113,113,0.15);
+}
+
+.btn-add-card {
+  width: 100%;
+  padding: 15px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 1px dashed var(--border-mid);
+  border-radius: var(--r-xl);
+  background: transparent;
+  color: var(--text-3);
+  letter-spacing: -0.01em;
+  transition: all 0.4s var(--spring);
+}
+.btn-add-card:hover {
+  border-color: rgba(56,189,248,0.35);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COLOR SWATCHES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.color-row {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.color-swatch {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.35s var(--spring), border-color 0.2s, box-shadow 0.3s;
+}
+.color-swatch:hover {
+  transform: scale(1.2);
+}
+.color-swatch.selected {
+  border-color: rgba(255,255,255,0.9);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DRIVE / SYNC PANE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.drive-info-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.8;
+  font-weight: 400;
+}
+.drive-info-box a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.drive-info-box a:hover {
+  text-decoration: underline;
+}
+.drive-info-box code {
+  background: var(--bg-raised);
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.sync-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+.sync-url-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sync-url-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 13px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text);
+  font-family: ui-monospace, 'SF Mono', monospace;
+  outline: none;
+  transition: border-color 0.35s var(--spring), box-shadow 0.35s var(--spring);
+}
+.sync-url-input:focus {
+  border-color: rgba(56,189,248,0.3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.sync-url-input::placeholder {
+  color: var(--text-4);
+}
+
+.sync-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sync-status {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
+.sync-status.ok  { color: var(--success); }
+.sync-status.err { color: var(--danger); }
+.sync-status.ing { color: var(--text-4); }
+
+.btn-group {
+  display: flex;
+  gap: 7px;
+}
+.btn-pill {
+  padding: 7px 15px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid var(--border-mid);
+  background: var(--bg-raised);
+  color: var(--text-2);
+  font-family: var(--font);
+  letter-spacing: -0.01em;
+  transition: all 0.35s var(--spring);
+}
+.btn-pill:hover {
+  border-color: rgba(56,189,248,0.35);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.btn-pill.primary {
+  background: var(--accent);
+  color: var(--accent-on);
+  border-color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+.btn-pill.primary:hover {
+  opacity: 0.88;
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+
+.io-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-io {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: var(--font);
+  letter-spacing: -0.01em;
+  transition: all 0.35s var(--spring);
+}
+.btn-io:hover {
+  border-color: rgba(56,189,248,0.35);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── HEADER ─────────────────────────────────────── -->
+  <div class="header">
+    <div class="header-title">Card<span>Rewards</span></div>
+    <div class="header-sub">Highest % &middot; Best card &middot; Instant</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SEARCH PANE
+  ══════════════════════════════════════════════════ -->
+  <div id="pane-search" class="pane active">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="q" placeholder="Store name — e.g. Costco, Loblaws…"
+             oninput="runSearch()" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+
+    <div class="channel-toggle">
+      <button class="ch-btn active" id="ch-in" onclick="setCh('instore')">In-store</button>
+      <button class="ch-btn" id="ch-on" onclick="setCh('online')">Online</button>
+    </div>
+
+    <div id="results" class="results">
+      <div class="empty-state">
+        <span class="icon">💳</span>
+        Type a store name to find your best card
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MY CARDS PANE
+  ══════════════════════════════════════════════════ -->
+  <div id="pane-cards" class="pane">
+    <div class="section-label">My cards</div>
+    <div id="cardList"></div>
+    <button class="btn-add-card" onclick="addCard()">+ Add card</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       DRIVE SYNC PANE
+  ══════════════════════════════════════════════════ -->
+  <div id="pane-sync" class="pane">
+    <div class="section-label">Google Drive sync</div>
+
+    <div class="drive-info-box">
+      Create a blank <code>.json</code> file in Google Drive and share it with
+      <em>"Anyone with the link can edit"</em>. Paste the share link below — the app
+      auto-pushes every change within 2 seconds.<br><br>
+      <a href="https://drive.google.com" target="_blank">Open Google Drive →</a>
+    </div>
+
+    <div class="sync-block">
+      <div class="sync-url-row">
+        <input class="sync-url-input" type="text" id="driveUrl"
+               placeholder="https://drive.google.com/file/d/…/view"
+               oninput="saveDriveUrl()">
+      </div>
+      <div class="sync-actions">
+        <span id="syncStatus" class="sync-status ing">Not connected</span>
+        <div class="btn-group">
+          <button class="btn-pill" onclick="pullDrive()">↓ Pull</button>
+          <button class="btn-pill primary" onclick="pushDrive(false)">↑ Push</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:10px">Manual transfer</div>
+    <div class="io-row">
+      <button class="btn-io" onclick="exportJSON()">⬇ Export JSON</button>
+      <label class="btn-io" style="cursor:pointer">
+        ⬆ Import JSON
+        <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+      </label>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       TAB BAR
+  ══════════════════════════════════════════════════ -->
+  <nav class="tab-bar">
+    <button class="tab active" onclick="showPane('search')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search
+    </button>
+    <button class="tab" onclick="showPane('cards')">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      My Cards
+    </button>
+    <button class="tab" onclick="showPane('sync')">
+      <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      Drive
+    </button>
+  </nav>
+
+</div><!-- /.shell -->
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DATA & CONSTANTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const COLORS = ['#38bdf8','#34d399','#f59e0b','#f87171','#a78bfa','#ec4899','#fb923c','#818cf8'];
+const REWARD_TYPES = ['Cash back','Points','Dollar value %'];
+
+let ch = 'instore', openIdx = null, pushTimer = null;
+
+const DEFAULT_CARDS = [
+  { id:'rogers', name:'Rogers Red World Elite MC', color:'#f87171', rewardType:'Cash back', defaultPct:1.5,
+    rules:[
+      {store:'Costco',   channel:'instore', pct:3,   note:'3% cash back — Costco in-store'},
+      {store:'Walmart',  channel:'both',    pct:3,   note:'3% cash back at Walmart'}
+    ]
+  },
+  { id:'nbwem', name:'National Bank World Elite MC', color:'#818cf8', rewardType:'Points', defaultPct:1.5,
+    rules:[
+      {store:'Grocery',  channel:'both',    pct:2,   note:'2% on groceries & dining'}
+    ]
+  },
+  { id:'wsv', name:'Wealthsimple Visa', color:'#34d399', rewardType:'Cash back', defaultPct:1,
+    rules:[
+      {store:'Costco',   channel:'online',  pct:3,   note:'3% on Costco.ca online orders'}
+    ]
+  }
+];
+
+let cards    = lsGet('cc_cards')     || JSON.parse(JSON.stringify(DEFAULT_CARDS));
+let driveUrl = lsGet('cc_drive_url') || '';
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   UTILITIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function lsGet(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function saveCards(){ lsSet('cc_cards', cards); }
+function saveDriveUrl(){ driveUrl=document.getElementById('driveUrl').value.trim(); lsSet('cc_drive_url',driveUrl); }
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NAVIGATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function showPane(p){
+  ['search','cards','sync'].forEach((n,i)=>{
+    document.getElementById('pane-'+n).classList.toggle('active', n===p);
+    document.querySelectorAll('.tab')[i].classList.toggle('active', n===p);
+  });
+  if(p==='cards')  renderCards();
+  if(p==='search') runSearch();
+  if(p==='sync')   document.getElementById('driveUrl').value = driveUrl;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SEARCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function setCh(c){
+  ch = c;
+  document.getElementById('ch-in').classList.toggle('active', c==='instore');
+  document.getElementById('ch-on').classList.toggle('active', c==='online');
+  runSearch();
+}
+
+function matchCard(card, q){
+  const ql = q.toLowerCase().trim();
+  if(!ql) return {pct:card.defaultPct, note:'Base earn rate', matched:false};
+  for(const r of card.rules){
+    if(!r.store) continue;
+    const sl = r.store.toLowerCase();
+    if(sl.includes(ql) || ql.includes(sl)){
+      if(r.channel==='both' || r.channel===ch)
+        return {pct:r.pct, note:r.note, matched:true, matchedStore:r.store};
+    }
+  }
+  return {pct:card.defaultPct, note:'Base earn rate', matched:false};
+}
+
+function runSearch(){
+  const q  = (document.getElementById('q')||{}).value || '';
+  const el = document.getElementById('results');
+  if(!el) return;
+  if(!cards.length){
+    el.innerHTML='<div class="empty-state"><span class="icon">💳</span>Add cards in the My Cards tab</div>';
+    return;
+  }
+  if(!q.trim()){
+    el.innerHTML='<div class="empty-state"><span class="icon">🔍</span>Type a store name to compare cards</div>';
+    return;
+  }
+  const scored = cards.map(c=>({...c,...matchCard(c,q)})).sort((a,b)=>b.pct-a.pct).slice(0,3);
+  const labs   = ['Best pick','Runner-up','Third'];
+  el.innerHTML = scored.map((c,i)=>`
+    <div class="res-card rank-${i}">
+      <div class="rank-label">${i===0?'★ &nbsp;':''}${labs[i]}</div>
+      <div class="res-body">
+        <div style="flex:1;min-width:0">
+          <div class="res-name">
+            ${esc(c.name)}${c.matched?`<span class="match-tag">✓ ${esc(c.matchedStore)}</span>`:''}
+          </div>
+          <div class="res-type">${esc(c.rewardType||'')}</div>
+        </div>
+        <div class="res-pct-wrap">
+          <div class="res-pct">${(+c.pct).toFixed(1)}<span>%</span></div>
+          <div class="res-pct-unit">dollar value</div>
+        </div>
+      </div>
+      ${c.note ? `<div class="res-note">${esc(c.note)}</div>` : ''}
+    </div>`).join('');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CARD EDITOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderCards(){
+  const el = document.getElementById('cardList');
+  if(!el) return;
+  if(!cards.length){
+    el.innerHTML='<div class="empty-state" style="margin-bottom:14px"><span class="icon">💳</span>No cards yet</div>';
+    return;
+  }
+  el.innerHTML = cards.map((c,ci)=>`
+    <div class="card-item">
+      <div class="card-hdr" onclick="toggleCard(${ci})">
+        <div class="card-hdr-l">
+          <div class="card-dot" style="background:${c.color};box-shadow:0 0 8px ${c.color}88"></div>
+          <div>
+            <div class="card-hdr-name">${esc(c.name)}</div>
+            <div class="card-hdr-sub">${esc(c.rewardType||'—')} &middot; ${c.rules.filter(r=>r.store).length} rules &middot; ${(+c.defaultPct).toFixed(1)}% base</div>
+          </div>
+        </div>
+        <span class="card-hdr-chevron ${openIdx===ci?'open':''}">▾</span>
+      </div>
+
+      <div class="card-body ${openIdx===ci?'open':''}">
+
+        <div class="field-group">
+          <label class="field-label">Card name</label>
+          <input class="field-input" type="text" value="${esc(c.name)}"
+                 onchange="cards[${ci}].name=this.value;autoSave()">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Reward type</label>
+          <select class="field-select" onchange="cards[${ci}].rewardType=this.value;autoSave()">
+            ${REWARD_TYPES.map(t=>`<option ${c.rewardType===t?'selected':''}>${esc(t)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Colour</label>
+          <div class="color-row">
+            ${COLORS.map(col=>`<div class="color-swatch ${c.color===col?'selected':''}"
+              style="background:${col}"
+              onclick="cards[${ci}].color='${col}';autoSave();renderCards()"></div>`).join('')}
+          </div>
+        </div>
+
+        <div class="field-group" style="margin-top:6px">
+          <label class="field-label" style="margin-bottom:8px">Store rules — reward %</label>
+          <div class="rules-header">
+            <span>Store</span>
+            <span style="text-align:right">%</span>
+            <span style="text-align:center">Channel</span>
+            <span></span>
+          </div>
+          <div id="rules-${ci}">
+            ${c.rules.filter(r=>r.store).map((r,ri)=>ruleRowHTML(ci,ri,r)).join('')}
+          </div>
+          <button class="btn-add-rule" onclick="addRule(${ci})">+ Add store rule</button>
+        </div>
+
+        <div class="base-row">
+          <label>Base earn rate (everything else)</label>
+          <input class="base-input" type="number" min="0" max="20" step="0.1"
+                 value="${(+c.defaultPct).toFixed(1)}"
+                 onchange="cards[${ci}].defaultPct=+this.value;autoSave()">
+          <span class="pct-suffix">%</span>
+        </div>
+
+        <button class="btn-del-card" onclick="deleteCard(${ci})">✕ Remove card</button>
+      </div>
+    </div>`).join('');
+}
+
+function ruleRowHTML(ci, ri, r){
+  return `<div class="rule-row" id="rr-${ci}-${ri}">
+    <input class="rule-input" type="text" value="${esc(r.store)}" placeholder="Store name"
+           onchange="setRule(${ci},${ri},'store',this.value)">
+    <input class="rule-input pct" type="number" min="0" max="20" step="0.1" value="${(+r.pct).toFixed(1)}"
+           onchange="setRule(${ci},${ri},'pct',+this.value)">
+    <select class="rule-select" onchange="setRule(${ci},${ri},'channel',this.value)">
+      <option value="both"    ${r.channel==='both'    ?'selected':''}>Both</option>
+      <option value="instore" ${r.channel==='instore' ?'selected':''}>Store</option>
+      <option value="online"  ${r.channel==='online'  ?'selected':''}>Online</option>
+    </select>
+    <button class="btn-del" onclick="deleteRule(${ci},${ri})" title="Delete rule">✕</button>
+  </div>`;
+}
+
+function setRule(ci, ri, field, val){
+  const sr  = cards[ci].rules.filter(r=>r.store);
+  const idx = cards[ci].rules.indexOf(sr[ri]);
+  if(idx > -1){ cards[ci].rules[idx][field] = val; autoSave(); }
+}
+function addRule(ci){
+  cards[ci].rules.push({store:'', channel:'both', pct:2, note:''});
+  autoSave(); openIdx = ci; renderCards();
+}
+function deleteRule(ci, ri){
+  const sr  = cards[ci].rules.filter(r=>r.store);
+  const idx = cards[ci].rules.indexOf(sr[ri]);
+  if(idx > -1) cards[ci].rules.splice(idx,1);
+  autoSave(); renderCards();
+}
+function toggleCard(ci){ openIdx = openIdx===ci ? null : ci; renderCards(); }
+function addCard(){
+  cards.push({
+    id: 'c'+Date.now(),
+    name: 'New card',
+    color: COLORS[cards.length % COLORS.length],
+    rewardType: 'Cash back',
+    defaultPct: 1,
+    rules: []
+  });
+  openIdx = cards.length - 1;
+  autoSave(); renderCards();
+}
+function deleteCard(ci){ cards.splice(ci,1); openIdx=null; autoSave(); renderCards(); }
+
+function autoSave(){
+  saveCards();
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(()=>{ if(driveUrl) pushDrive(true); }, 2000);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GOOGLE DRIVE SYNC
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function driveFileId(){
+  const m = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+function setSyncStatus(msg, cls){
+  const el = document.getElementById('syncStatus');
+  if(el){ el.textContent = msg; el.className = 'sync-status ' + cls; }
+}
+
+async function getToken(){
+  return new Promise((res,rej)=>{
+    if(typeof google==='undefined' || !google.accounts){
+      rej(new Error('Google OAuth not available — use Export/Import JSON to transfer data')); return;
+    }
+    google.accounts.oauth2.initTokenClient({
+      client_id: 'YOUR_GOOGLE_CLIENT_ID',
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: (t) => t.error ? rej(new Error(t.error)) : res(t.access_token)
+    }).requestAccessToken();
+  });
+}
+
+async function pullDrive(){
+  const fid = driveFileId();
+  if(!fid){ setSyncStatus('No valid Drive URL','err'); return; }
+  setSyncStatus('Pulling…','ing');
+  try{
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?alt=media`,
+      { headers:{ Authorization:'Bearer '+await getToken() } });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    if(Array.isArray(data)){
+      cards = data; saveCards(); renderCards(); runSearch();
+      setSyncStatus('Pulled '+new Date().toLocaleTimeString(),'ok');
+    } else throw new Error('Unexpected data format');
+  }catch(e){ setSyncStatus('Failed: '+e.message,'err'); }
+}
+
+async function pushDrive(silent){
+  const fid = driveFileId();
+  if(!fid){ if(!silent) setSyncStatus('No valid Drive URL','err'); return; }
+  if(!silent) setSyncStatus('Pushing…','ing');
+  try{
+    const token = await getToken();
+    const r = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${fid}?uploadType=media`,
+      { method:'PATCH', headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify(cards, null, 2) }
+    );
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    setSyncStatus('Synced '+new Date().toLocaleTimeString(),'ok');
+  }catch(e){ setSyncStatus('Failed: '+e.message,'err'); }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   EXPORT / IMPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(cards, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cc-rewards.json';
+  a.click();
+}
+function importJSON(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try{
+      const d = JSON.parse(ev.target.result);
+      if(Array.isArray(d)){
+        cards = d; saveCards(); renderCards(); runSearch();
+        setSyncStatus('Imported','ok');
+      } else alert('Invalid format — expected a JSON array');
+    }catch(err){ alert('Could not parse JSON file'); }
+  };
+  r.readAsText(f);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   INIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+document.getElementById('driveUrl').value = driveUrl;
+renderCards();
+runSearch();
+</script>
+
+</body>
+</html>
