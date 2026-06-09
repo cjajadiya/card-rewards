@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1022,7 +1023,7 @@ const DEFAULT_CARDS = [
 ];
 
 let cards    = lsGet('cc_cards')     || JSON.parse(JSON.stringify(DEFAULT_CARDS));
-let driveUrl = lsGet('cc_drive_url') || '';
+let driveUrl = lsGet('cc_drive_url') || 'https://drive.google.com/file/d/1xvQbw85hOrF2HtVxV9NrnliLMCQfx30a/view?usp=drivesdk';
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    UTILITIES
@@ -1246,7 +1247,7 @@ async function getToken(){
       rej(new Error('Google OAuth not available — use Export/Import JSON to transfer data')); return;
     }
     google.accounts.oauth2.initTokenClient({
-      client_id: 'YOUR_GOOGLE_CLIENT_ID',
+      client_id: '955809217547-962085l7ggs57rcrkb9ljndk3hvfq8ls.apps.googleusercontent.com',
       scope: 'https://www.googleapis.com/auth/drive.file',
       callback: (t) => t.error ? rej(new Error(t.error)) : res(t.access_token)
     }).requestAccessToken();
