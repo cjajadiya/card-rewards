@@ -873,7 +873,26 @@ input, select, button, textarea {
   gap: 8px;
   flex-wrap: wrap;
 }
-.btn-io {
+.btn-create-file {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 13px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 1px solid rgba(56,189,248,0.3);
+  border-radius: var(--r-lg);
+  background: var(--accent-mid);
+  color: var(--accent);
+  letter-spacing: -0.01em;
+  transition: all 0.35s var(--spring);
+}
+.btn-create-file:hover {
+  background: rgba(56,189,248,0.25);
+  border-color: rgba(56,189,248,0.5);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
   padding: 10px 16px;
   font-size: 12px;
   font-weight: 500;
@@ -943,9 +962,10 @@ input, select, button, textarea {
     <div class="section-label">Google Drive sync</div>
 
     <div class="drive-info-box">
-      Create a blank <code>.json</code> file in Google Drive and share it with
-      <em>"Anyone with the link can edit"</em>. Paste the share link below — the app
-      auto-pushes every change within 2 seconds.<br><br>
+      The easiest setup: click <strong>Create new Drive file</strong> below — the app creates a
+      plain <code>cc-rewards.json</code> file in your Drive automatically, no manual steps needed.<br><br>
+      Or paste an existing plain-text <code>.json</code> file share link (shared with
+      <em>"Anyone with link can edit"</em>). The app auto-pushes every change within 2 seconds.<br><br>
       <a href="https://drive.google.com" target="_blank">Open Google Drive →</a>
     </div>
 
@@ -962,15 +982,20 @@ input, select, button, textarea {
           <button class="btn-pill primary" onclick="pushDrive(false)">↑ Push</button>
         </div>
       </div>
+      <div id="newFileNote" style="display:none;margin-top:10px;font-size:12px;color:var(--success);line-height:1.6;"></div>
     </div>
 
-    <div class="section-label" style="margin-bottom:10px">Manual transfer</div>
-    <div class="io-row">
-      <button class="btn-io" onclick="exportJSON()">⬇ Export JSON</button>
-      <label class="btn-io" style="cursor:pointer">
-        ⬆ Import JSON
-        <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
-      </label>
+    <button class="btn-create-file" onclick="createDriveFile()">✦ Create new Drive file automatically</button>
+
+    <div style="margin-top:16px">
+      <div class="section-label" style="margin-bottom:10px">Manual transfer</div>
+      <div class="io-row">
+        <button class="btn-io" onclick="exportJSON()">⬇ Export JSON</button>
+        <label class="btn-io" style="cursor:pointer">
+          ⬆ Import JSON
+          <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+        </label>
+      </div>
     </div>
   </div>
 
@@ -1248,7 +1273,7 @@ async function getToken(){
     }
     google.accounts.oauth2.initTokenClient({
       client_id: '955809217547-962085l7ggs57rcrkb9ljndk3hvfq8ls.apps.googleusercontent.com',
-      scope: 'https://www.googleapis.com/auth/drive.file',
+      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.install',
       callback: (t) => t.error ? rej(new Error(t.error)) : res(t.access_token)
     }).requestAccessToken();
   });
@@ -1259,15 +1284,30 @@ async function pullDrive(){
   if(!fid){ setSyncStatus('No valid Drive URL','err'); return; }
   setSyncStatus('Pulling…','ing');
   try{
+    const token = await getToken();
+    // First check MIME type — Google-native files (Docs/Sheets) can't be read as media
+    const meta = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=mimeType,name`,
+      { headers:{ Authorization:'Bearer '+token } });
+    if(!meta.ok) throw new Error('Cannot access file (HTTP '+meta.status+'). Check sharing is set to Anyone with link can edit.');
+    const { mimeType } = await meta.json();
+    if(mimeType && mimeType.startsWith('application/vnd.google-apps')){
+      throw new Error('This is a Google-native file. Please create a plain .json file instead — see instructions below.');
+    }
+    // Download content
     const r = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?alt=media`,
-      { headers:{ Authorization:'Bearer '+await getToken() } });
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const data = await r.json();
+      { headers:{ Authorization:'Bearer '+token } });
+    if(!r.ok) throw new Error('Download failed (HTTP '+r.status+')');
+    const text = (await r.text()).trim();
+    // Empty file on first use is fine — treat as empty array
+    if(!text || text === ''){
+      setSyncStatus('File empty — push to initialise','ok'); return;
+    }
+    const data = JSON.parse(text);
     if(Array.isArray(data)){
       cards = data; saveCards(); renderCards(); runSearch();
       setSyncStatus('Pulled '+new Date().toLocaleTimeString(),'ok');
-    } else throw new Error('Unexpected data format');
-  }catch(e){ setSyncStatus('Failed: '+e.message,'err'); }
+    } else throw new Error('File does not contain a JSON array');
+  }catch(e){ setSyncStatus(''+e.message,'err'); }
 }
 
 async function pushDrive(silent){
@@ -1276,14 +1316,59 @@ async function pushDrive(silent){
   if(!silent) setSyncStatus('Pushing…','ing');
   try{
     const token = await getToken();
+    // Verify the file is accessible and not Google-native before writing
+    const meta = await fetch(`https://www.googleapis.com/drive/v3/files/${fid}?fields=mimeType`,
+      { headers:{ Authorization:'Bearer '+token } });
+    if(!meta.ok) throw new Error('Cannot access file (HTTP '+meta.status+'). Check sharing settings.');
+    const { mimeType } = await meta.json();
+    if(mimeType && mimeType.startsWith('application/vnd.google-apps')){
+      throw new Error('Google-native file — create a plain .json file instead.');
+    }
     const r = await fetch(
       `https://www.googleapis.com/upload/drive/v3/files/${fid}?uploadType=media`,
-      { method:'PATCH', headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+      { method:'PATCH',
+        headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' },
         body: JSON.stringify(cards, null, 2) }
     );
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    if(!r.ok) throw new Error('Upload failed (HTTP '+r.status+')');
     setSyncStatus('Synced '+new Date().toLocaleTimeString(),'ok');
-  }catch(e){ setSyncStatus('Failed: '+e.message,'err'); }
+  }catch(e){ setSyncStatus(''+e.message,'err'); }
+}
+
+// Creates a brand-new plain-text JSON file in Drive root and updates the URL field
+async function createDriveFile(){
+  setSyncStatus('Creating file…','ing');
+  try{
+    const token = await getToken();
+    // Step 1: create file metadata
+    const meta = await fetch('https://www.googleapis.com/drive/v3/files',{
+      method:'POST',
+      headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ name:'cc-rewards.json', mimeType:'text/plain' })
+    });
+    if(!meta.ok) throw new Error('Could not create file (HTTP '+meta.status+')');
+    const { id } = await meta.json();
+    // Step 2: write initial content
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`,{
+      method:'PATCH',
+      headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify(cards, null, 2)
+    });
+    // Step 3: make it shareable
+    await fetch(`https://www.googleapis.com/drive/v3/files/${id}/permissions`,{
+      method:'POST',
+      headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ role:'writer', type:'anyone' })
+    });
+    const newUrl = `https://drive.google.com/file/d/${id}/view?usp=sharing`;
+    driveUrl = newUrl;
+    lsSet('cc_drive_url', driveUrl);
+    document.getElementById('driveUrl').value = driveUrl;
+    setSyncStatus('File created & synced ✓','ok');
+    // Show the URL so user can copy it
+    document.getElementById('newFileNote').textContent = '✓ New file created. Copy the URL above and share it with other devices.';
+    document.getElementById('newFileNote').style.display = 'block';
+  }catch(e){ setSyncStatus(''+e.message,'err'); }
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
